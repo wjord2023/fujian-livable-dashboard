@@ -17,19 +17,20 @@ export default function GeoTrail(props: GeoTrailProps) {
   const t = useRef(0);
 
   const points = useMemo(() => {
-    let v3Arr: Vector3[] = [];
-    feature.geometry.coordinates[0].map((coord) => {
-      v3Arr = coord.map((el) => {
-        const [x, y] = projection(el as [number, number])!;
-        return new Vector3(x, -y, 0);
-      });
-    });
+    const rings = feature.geometry.coordinates.flatMap((polygon) => polygon);
+    const outline = rings.reduce<number[][]>(
+      (longest, ring) => (ring.length > longest.length ? ring : longest),
+      []
+    );
 
-    return v3Arr;
+    return outline.map((el) => {
+      const [x, y] = projection(el as [number, number])!;
+      return new Vector3(x, -y, 0);
+    });
   }, [feature, projection]);
 
   useFrame((_, delta) => {
-    if (!follower.current) return;
+    if (!follower.current || points.length === 0) return;
 
     t.current += delta / 10;
     const total = points.length;

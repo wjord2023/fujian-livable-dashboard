@@ -22,7 +22,7 @@ export interface ConesProps {
 }
 
 export default function Cones(props: ConesProps) {
-  const { color = new Color(0x8fc2ff) } = props;
+  const { color = new Color(0x5FE3B8) } = props;
   const texture1 = useTexture(guangquan01);
 
   return (

@@ -7,9 +7,9 @@ export default extend(
     {
       time: 0,
       depth: 1,
-      baseTopColor: new Color("#8fc2ff"),
+      baseTopColor: new Color("#5FE3B8"),
       baseBottomColor: new Color("#10182c"),
-      scanColor: new Color("#8fc2ff"),
+      scanColor: new Color("#5FE3B8"),
       opacity: 1.0,
     },
     `varying vec3 vPosition;

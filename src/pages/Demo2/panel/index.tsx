@@ -5,6 +5,7 @@ import AutoFit from "@/components/autoFit";
 import { useConfigStore } from "../stores";
 
 import Headder from "./headder";
+import CityDrawer from "./cityDrawer";
 import Chart6 from "./chart6";
 import Chart2 from "./chart2";
 import Chart4 from "./chart4";
@@ -35,8 +36,8 @@ const CardWrapper = styled.div`
 const CardTitle = styled.div`
   position: relative;
   font-size: 16px;
-  color: #e8efff;
-  border-bottom: 1px solid rgba(186, 206, 255, 0.33);
+  color: #E6FBF1;
+  border-bottom: 1px solid rgba(140, 225, 195, 0.33);
   line-height: 50px;
   margin-inline: 20px;
 
@@ -47,7 +48,7 @@ const CardTitle = styled.div`
     bottom: 0;
     width: 50px;
     height: 4px;
-    background-color: #bdcfff;
+    background-color: #93E6C8;
   }
 
   &::after {
@@ -58,7 +59,7 @@ const CardTitle = styled.div`
     width: 4px;
     height: 4px;
     border-radius: 2px;
-    background-color: #bdcfff;
+    background-color: #93E6C8;
   }
 `;
 
@@ -83,13 +84,13 @@ const Card = ({
       viewBox="0 0 260 180"
       preserveAspectRatio="none">
       <path
-        fill="#3061DB"
+        fill="#2FC98E"
         fillRule="evenodd"
         d="M206 10 190 0H9L0 9v171h45l4.5-4h161l4.5 4h45V10h-54Zm53 1h-53.287l-16-10H9.414L1 9.414V179h43.62l4.5-4h161.76l4.5 4H259V11Z"
       />
 
-      <path fill="#789eff" d="m51 178-2 2h162l-2-2H51ZM0 0v7l7-7H0Z" />
-      <path stroke="#789eff" strokeWidth={2} d="M1 169v10h10M259 21V11h-10" />
+      <path fill="#5FE3B8" d="m51 178-2 2h162l-2-2H51ZM0 0v7l7-7H0Z" />
+      <path stroke="#5FE3B8" strokeWidth={2} d="M1 169v10h10M259 21V11h-10" />
     </svg>
     <CardWrapper>
       <CardTitle>{title}</CardTitle>
@@ -136,40 +137,41 @@ export default function Panel() {
         <Card
           ref={leftBox.ref}
           style={{ gridArea: "1 / 1 / 3 / 2" }}
-          title="发电汇总">
+          title="九市宜居指数·风玫瑰">
           <Chart1 />
         </Card>
         <Card
           ref={leftBox1.ref}
           style={{ gridArea: "3 / 1 / 5 / 2" }}
-          title="用电量预测">
+          title="十年趋势对比">
           <Chart2 />
         </Card>
         <Card
           ref={leftBox2.ref}
           style={{ gridArea: "5 / 1 / 7 / 2" }}
-          title="上半年发电情况">
+          title="多维指标·散点矩阵">
           <Chart3 />
         </Card>
         <Card
           ref={rightBox.ref}
           style={{ gridArea: "1 / 4 / 3 / 5" }}
-          title="电网设备数量">
+          title="核心指标概览">
           <Chart4 />
         </Card>
         <Card
           ref={rightBox1.ref}
           style={{ gridArea: "3 / 4 / 5 / 5" }}
-          title="用电大市TOP5">
+          title="沿海三城对比">
           <Chart5 />
         </Card>
         <Card
           ref={rightBox2.ref}
           style={{ gridArea: "5 / 4 / 7 / 5" }}
-          title="故障异常">
+          title="九市维度·平行坐标">
           <Chart6 />
         </Card>
       </GridWrapper>
+      <CityDrawer />
     </AutoFit>
   );
 }

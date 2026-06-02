@@ -15,6 +15,7 @@ import {
   type MarkPointComponentOption,
   type TooltipComponentOption,
 } from "echarts/components";
+import { greenLivableTrend } from "../data";
 
 type LineOption = ComposeOption<
   | LineSeriesOption
@@ -25,16 +26,13 @@ type LineOption = ComposeOption<
   | MarkPointComponentOption
 >;
 
-const colors = ["#3061DB", "#BDCFFF"];
-const dataType = { type1: "今年", type2: "去年" };
-
-let data: [string[], number[], number[]] = [[], [], []];
-
-for (let i = 0; i < 30; i++) {
-  data[0].push(`${i + 1}`.padStart(2, "0"));
-  data[1].push(Math.round(i * Math.random() * 1000));
-  data[2].push(Math.round(i * Math.random() * 1050));
-}
+const colors = ["#2FC98E", "#93E6C8"];
+const dataType = { type1: "综合指数", type2: "城镇化率" };
+const data: [string[], number[], number[]] = [
+  greenLivableTrend.map((item) => `${item.year}`),
+  greenLivableTrend.map((item) => item.index),
+  greenLivableTrend.map((item) => item.urbanization),
+];
 
 export default function Chart2() {
   const chartRef = useRef<EChartsType>(null);
@@ -79,7 +77,7 @@ export default function Chart2() {
           borderRadius: 8,
         },
         grid: {
-          top: 16,
+          top: 42,
           bottom: 16,
           left: 16,
           right: 16,
@@ -108,6 +106,8 @@ export default function Chart2() {
           },
           axisLabel: {
             interval: 0,
+            hideOverlap: true,
+            margin: 10,
             color: "rgba(255, 255, 255, 0.6)",
           },
           splitLine: {
@@ -143,7 +143,7 @@ export default function Chart2() {
         },
         series: [
           {
-            name: "今年",
+            name: dataType.type1,
             type: "line",
             symbol: "none",
             smooth: true,
@@ -181,7 +181,7 @@ export default function Chart2() {
             data: data[1],
           },
           {
-            name: "去年",
+            name: dataType.type2,
             type: "line",
             symbol: "none",
             smooth: true,

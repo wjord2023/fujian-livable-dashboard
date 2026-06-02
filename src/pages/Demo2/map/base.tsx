@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { Center, useTexture } from "@react-three/drei";
 import {
   Box2,
@@ -22,19 +22,22 @@ import ShapeBox from "./shape";
 import FlyLine from "./flyLine";
 import Boundary from "./boundary";
 import Label from "./label";
-import { useConfigStore } from "../stores";
+import { activeCitySelector, useConfigStore } from "../stores";
 
-import scNormalMap from "@/assets/sc_normal_map1.png";
+import fjMap from "@/assets/fj_map.png";
+import fjNormalMap from "@/assets/fj_normal_map.png";
+import fjDisplacementMap from "@/assets/fj_displacement_map.png";
 import Cones from "./cone";
 
 export interface BaseProps {
   depth?: number;
   data: CityGeoJSON;
   outlineData?: CityGeoJSON;
+  controls?: RefObject<{ target: Vector3; update: () => void } | null>;
 }
 
 export default function Base(props: BaseProps) {
-  const { data, outlineData, depth = 1 } = props;
+  const { data, outlineData, depth = 1, controls } = props;
   const groupRef = useRef<Group>(null!);
   const camera = useThree((state) => state.camera);
 
@@ -106,9 +109,9 @@ export default function Base(props: BaseProps) {
     const tl = gsap.timeline();
 
     tl.to(camera.position, {
-      x: -2,
-      y: 7,
-      z: 10,
+      x: 5.8,
+      y: 4.8,
+      z: 3.8,
       duration: 2.5,
       // delay: 2,
       ease: "circ.out",
@@ -140,13 +143,54 @@ export default function Base(props: BaseProps) {
     };
   }, [camera]);
 
+  // 点击城市后，相机平滑聚焦到该市；取消选择则回到全省概览视角。
+  useEffect(() => {
+    return useConfigStore.subscribe(
+      (s) => s.selectedCity,
+      (selectedCity) => {
+        const ctrl = controls?.current;
+        if (!ctrl || !groupRef.current) return;
+
+        let target: Vector3;
+        let camPos: { x: number; y: number; z: number };
+
+        if (selectedCity) {
+          const region = regions.find((r) => r.name === selectedCity);
+          if (!region) return;
+          groupRef.current.updateWorldMatrix(true, false);
+          target = new Vector3(region.center.x, region.center.y, depth);
+          groupRef.current.localToWorld(target);
+          camPos = { x: target.x + 2.2, y: target.y + 2.8, z: target.z + 3.4 };
+        } else {
+          target = new Vector3(0, 0, 0);
+          camPos = { x: 5.8, y: 4.8, z: 3.8 };
+        }
+
+        gsap.to(ctrl.target, {
+          x: target.x,
+          y: target.y,
+          z: target.z,
+          duration: 1,
+          ease: "power2.inOut",
+          onUpdate: () => ctrl.update(),
+        });
+        gsap.to(camera.position, {
+          ...camPos,
+          duration: 1,
+          ease: "power2.inOut",
+          onUpdate: () => ctrl.update(),
+        });
+      }
+    );
+  }, [regions, depth, camera, controls]);
+
   return (
     <Center top>
       <group
         castShadow
         receiveShadow
         rotation={[-Math.PI / 2, 0, 0]}
-        scale={[0.5, 0.5, 0.5]}
+        scale={[0.68, 0.68, 0.68]}
         position={[0, 0.2, 0]}>
         <group ref={groupRef} scale={[1, 1, 0]} position={[0, 0, -0.01]}>
           {regions.map((region, idx) => (
@@ -186,7 +230,11 @@ function City(props: {
   const groupRef = useRef<Group>(null!);
   const vector3 = useRef(new Vector3(1, 1, 1));
 
-  const texture = useTexture(scNormalMap);
+  const [texture, normalMap, displacementMap] = useTexture([
+    fjMap,
+    fjNormalMap,
+    fjDisplacementMap,
+  ]);
 
   const [shape, shapeGeometry] = useMemo(() => {
     const shapes = data.points.map((e) => new Shape(e));
@@ -199,35 +247,42 @@ function City(props: {
     materialRef.current.uniforms.time.value += delta / 3;
   });
 
+  // 跟随全局高亮城市：当前城市被高亮则抬升（z 放大），否则复位。
+  useEffect(() => {
+    const apply = (active: string | null) =>
+      vector3.current.setZ(active === data.name ? 1.6 : 1);
+    apply(activeCitySelector(useConfigStore.getState()));
+    return useConfigStore.subscribe(activeCitySelector, apply);
+  }, [data.name]);
+
   return (
     <object3D
       ref={groupRef}
       onPointerOver={(e) => {
         e.stopPropagation();
-        vector3.current.setZ(1.5);
+        useConfigStore.getState().setHoveredCity(data.name);
         document.body.style.cursor = "pointer";
       }}
       onPointerOut={() => {
-        vector3.current.setZ(1);
+        useConfigStore.getState().setHoveredCity(null);
         document.body.style.cursor = "auto";
       }}
-      //   onClick={(e) => {
-      //     e.stopPropagation();
-      //     gsap.to(e.camera.position, {
-      //       x: e.object.position.x,
-      //       y: e.object.position.y,
-      //       z: e.object.position.z,
-      //       duration: 2,
-      //     });
-      //   }}
+      onClick={(e) => {
+        e.stopPropagation();
+        useConfigStore.getState().setSelectedCity(data.name);
+      }}
     >
       <ShapeBox bbox={bbox} args={[shape, { depth, bevelEnabled: false }]}>
         <meshStandardMaterial
           transparent
           attach="material-0"
-          color="#293b41"
-          normalMap={texture}
-          metalness={0.5}
+          color="#dce8e1"
+          map={texture}
+          normalMap={normalMap}
+          normalScale={new Vector2(0.35, 0.35)}
+          displacementMap={displacementMap}
+          displacementScale={0.02}
+          metalness={0.2}
           roughness={0.7}
           side={DoubleSide}
           opacity={0}
@@ -238,6 +293,7 @@ function City(props: {
           ref={materialRef}
           opacity={0}
           depth={depth}
+          side={DoubleSide}
         />
       </ShapeBox>
       <lineSegments position={[0, 0, depth + 0.05]} raycast={() => null}>

@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useRef, type ComponentRef } from "react";
 import styled from "styled-components";
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
@@ -9,11 +9,11 @@ import Bottom from "./bottom";
 import BeamLight from "./beamLight";
 import type { CityGeoJSON } from "@/types/map";
 
-import scMapData from "@/assets/sc.json";
-import scOutlineData from "@/assets/sc_outline.json";
+import fjMapData from "@/assets/fj.json";
+import fjOutlineData from "@/assets/fj_outline.json";
 
-const mapData = scMapData as CityGeoJSON,
-  outlineData = scOutlineData as CityGeoJSON;
+const mapData = fjMapData as CityGeoJSON,
+  outlineData = fjOutlineData as CityGeoJSON;
 
 const CanvasWrapper = styled.div`
   position: absolute;
@@ -23,28 +23,31 @@ const CanvasWrapper = styled.div`
 `;
 
 export default function Map() {
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls> | null>(null);
+
   return (
     <CanvasWrapper>
       <Canvas
         camera={{
           fov: 70,
-          position: [3, 20, 10],
+          position: [8.5, 10, 6.5],
         }}
         dpr={[1, 2]}>
         <fog attach="fog" args={["#000000", 10, 30]} />
         <color attach="background" args={["#000000"]} />
         <Lights />
         <Suspense fallback={null}>
-          <Base data={mapData} outlineData={outlineData} />
+          <Base data={mapData} outlineData={outlineData} controls={controlsRef} />
         </Suspense>
         <Bottom />
         <Mirror />
         <BeamLight />
         <OrbitControls
+          ref={controlsRef}
           enableDamping
           zoomSpeed={0.3}
-          minDistance={8}
-          maxDistance={20}
+          minDistance={2.4}
+          maxDistance={24}
           maxPolarAngle={1.5}
         />
       </Canvas>

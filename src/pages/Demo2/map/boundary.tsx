@@ -5,7 +5,7 @@ import { shaderMaterial } from "@react-three/drei";
 const BoundaryMaterial = extend(
   shaderMaterial(
     {
-      uColor: new Color("#8fc2ff"),
+      uColor: new Color("#5FE3B8"),
       uOpacity: 1,
       uDepth: 1,
     },

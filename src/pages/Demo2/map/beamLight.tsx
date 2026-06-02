@@ -121,7 +121,7 @@ const BeamLight = ({}: SparklesProps) => {
             depthWrite={false}
             side={DoubleSide}
             blending={AdditiveBlending}
-            uColor={0x8fc2ff}
+            uColor={0x5FE3B8}
             uOpacity={0.5 + Math.random() * 0.2}
           />
         </mesh>

@@ -21,7 +21,7 @@ export default function Bottom() {
         <meshBasicMaterial
           transparent
           map={quan1Tex}
-          color="#8fc2ff"
+          color="#5FE3B8"
           opacity={1}
           depthWrite={false}
           blending={AdditiveBlending}

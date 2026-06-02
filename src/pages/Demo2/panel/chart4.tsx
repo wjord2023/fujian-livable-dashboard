@@ -1,14 +1,15 @@
 import styled from "styled-components";
 import NumberAnimation from "@/components/numberAnimation";
+import { greenLivableSummary } from "../data";
 
 const data = [
   {
-    label: "线路",
-    value: 120,
-    unit: "回",
-    label2: "长度",
-    value2: 1220,
-    unit2: "KM",
+    label: "覆盖城市",
+    value: greenLivableSummary.cityCount,
+    unit: "个",
+    label2: "统计年份",
+    value2: greenLivableSummary.latestYear,
+    unit2: "年",
     icon: (
       <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
         <path d="M715.294118 180.705882h128c15.058824 0 30.117647-12.54902 30.117647-30.117647 0-15.058824-12.54902-30.117647-30.117647-30.117647h-128c-15.058824 0-30.117647 12.54902-30.117647 30.117647s12.54902 30.117647 30.117647 30.117647zM1104.313725 0c-82.823529 0-150.588235 67.764706-150.588235 153.098039 0 82.823529 67.764706 153.098039 150.588235 153.098039s150.588235-67.764706 150.588236-153.098039C1254.901961 67.764706 1187.137255 0 1104.313725 0z m0 245.960784c-50.196078 0-92.862745-42.666667-92.862745-92.862745s40.156863-92.862745 92.862745-92.862745c50.196078 0 92.862745 42.666667 92.862746 92.862745S1154.509804 245.960784 1104.313725 245.960784z m-376.470588 240.941177h-188.235294c-7.529412 0-160.627451-22.588235-160.627451-163.137255 0-135.529412 140.54902-140.54902 155.607843-140.54902h47.686275c15.058824 0 27.607843-15.058824 27.607843-30.117647s-12.54902-27.607843-27.607843-30.117647h-47.686275c-72.784314 0-213.333333 42.666667-213.333333 200.784314 0 155.607843 138.039216 213.333333 213.333333 223.372549h188.235294c7.529412 0 160.627451 22.588235 160.627451 163.137255 0 135.529412-140.54902 140.54902-155.607843 140.549019H298.666667c-10.039216-75.294118-72.784314-130.509804-148.078432-130.509804-82.823529 0-150.588235 67.764706-150.588235 153.09804 0 82.823529 67.764706 150.588235 150.588235 150.588235 70.27451 0 130.509804-50.196078 145.568628-115.45098H727.843137c75.294118 0 213.333333-42.666667 213.333334-200.784314 0-155.607843-138.039216-213.333333-213.333334-220.862745zM150.588235 966.27451c-50.196078 0-92.862745-42.666667-92.862745-92.862745C57.72549 820.705882 100.392157 778.039216 150.588235 778.039216s92.862745 42.666667 92.862745 92.862745C240.941176 923.607843 200.784314 966.27451 150.588235 966.27451z"></path>
@@ -16,12 +17,13 @@ const data = [
     ),
   },
   {
-    label: "变电站",
-    value: 48,
-    unit: "座",
-    label2: "功率",
-    value2: 1820,
-    unit2: "MVA",
+    label: "综合指数",
+    value: greenLivableSummary.avgIndex,
+    unit: "分",
+    label2: "十年提升",
+    value2: greenLivableSummary.improvement,
+    unit2: "分",
+    digits: 2,
     icon: (
       <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
         <path d="M650.752 556.3904L510.5664 504.7808l63.8464-205.568-225.792 231.168 119.1424 65.024-64.4096 184.0128z"></path>
@@ -30,12 +32,13 @@ const data = [
     ),
   },
   {
-    label: "电缆",
-    value: 140,
-    unit: "回",
-    label2: "长度",
-    value2: 1520,
-    unit2: "KM",
+    label: "城镇化率",
+    value: greenLivableSummary.avgUrbanization,
+    unit: "%",
+    label2: "生态得分",
+    value2: greenLivableSummary.avgEco,
+    unit2: "分",
+    digits: 1,
     icon: (
       <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
         <path d="M904 456h-56c-30.9 0-56 25.1-56 56 0 154.4-125.6 280-280 280S232 666.4 232 512s125.6-280 280-280c22.9 0 42.5-13.9 51.2-33.6h220.4c4.6 0 8.4-3.8 8.4-8.4 0-4.6-3.8-8.4-8.4-8.4H566.9c0.2-1.9 1.1-3.6 1.1-5.6v-19.6h215.6c4.6 0 8.4-3.8 8.4-8.4 0-4.6-3.8-8.4-8.4-8.4H568V120c0-2-0.9-3.7-1.1-5.6h216.7c4.6 0 8.4-3.8 8.4-8.4 0-4.6-3.8-8.4-8.4-8.4H563.2C554.5 77.9 534.9 64 512 64 264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448c0-30.9-25.1-56-56-56zM512 904c-216.1 0-392-175.9-392-392s175.9-392 392-392v56c-185.6 0-336 150.4-336 336s150.4 336 336 336 336-150.4 336-336h56c0 216.1-175.9 392-392 392z"></path>
@@ -43,12 +46,14 @@ const data = [
     ),
   },
   {
-    label: "换流站",
-    value: 52,
-    unit: "座",
-    label2: "功率",
-    value2: 1120,
-    unit2: "MVA",
+    label: "人均GDP",
+    value: greenLivableSummary.avgGdpPerCapita / 10000,
+    unit: "万元",
+    label2: "原始均值",
+    value2: greenLivableSummary.avgGdpPerCapita,
+    unit2: "元/人",
+    digits: 2,
+    digits2: 0,
     icon: (
       <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
         <path d="M512 64c247.424 0 448 200.576 448 448s-200.576 448-448 448S64 759.424 64 512 264.576 64 512 64z m0 64C299.925333 128 128 299.925333 128 512s171.925333 384 384 384 384-171.925333 384-384S724.074667 128 512 128z"></path>
@@ -64,35 +69,42 @@ const Wrapper = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 10px;
 `;
 
 const Statistics1 = styled.div`
   display: flex;
   align-items: center;
+  gap: 6px;
+  min-width: 0;
   color: rgba(255, 255, 255, 0.8);
 `;
 
+const Info = styled.div`
+  min-width: 0;
+  flex: 1;
+`;
+
 const Statistics1Number = styled(NumberAnimation)`
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 600;
-  color: #3061db;
+  color: #2FC98E;
   text-shadow: 0 0 10px currentColor;
 `;
 
 const Statistics2Number = styled(NumberAnimation)`
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 600;
-  color: #bdcfff;
+  color: #93E6C8;
 `;
 
 const CompanyIcon = styled.div`
-  margin-right: 8px;
+  flex-shrink: 0;
   border-radius: 999px;
-  border: 1px solid #3061db;
-  padding: 0.5em;
-  font-size: 2em;
-  box-shadow: 0 0 10px #3061db;
+  border: 1px solid #2FC98E;
+  padding: 0.42em;
+  font-size: 1.5em;
+  box-shadow: 0 0 10px #2FC98E;
 
   svg {
     display: block;
@@ -101,8 +113,10 @@ const CompanyIcon = styled.div`
 
 const Item = styled.div`
   display: flex;
-  gap: 4px;
+  gap: 3px;
   align-items: baseline;
+  white-space: nowrap;
+  font-size: 11px;
 `;
 
 export default function Chart4() {
@@ -111,12 +125,12 @@ export default function Chart4() {
       {data.map((el, i) => (
         <Statistics1 key={i}>
           <CompanyIcon>{el.icon}</CompanyIcon>
-          <div>
+          <Info>
             <Item>
               <span>{el.label}</span>
               <Statistics1Number
                 value={el.value}
-                options={{ maximumFractionDigits: 0 }}
+                options={{ maximumFractionDigits: el.digits ?? 0 }}
               />
               <span>{el.unit}</span>
             </Item>
@@ -124,11 +138,11 @@ export default function Chart4() {
               <span>{el.label2}</span>
               <Statistics2Number
                 value={el.value2}
-                options={{ maximumFractionDigits: 0 }}
+                options={{ maximumFractionDigits: el.digits2 ?? el.digits ?? 0 }}
               />
               <span>{el.unit2}</span>
             </Item>
-          </div>
+          </Info>
         </Statistics1>
       ))}
     </Wrapper>

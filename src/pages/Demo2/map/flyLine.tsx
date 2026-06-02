@@ -50,7 +50,7 @@ export default function FlyLine(props: FlyLineProps) {
           <tubeGeometry args={[el, 32, 0.1, 2, false]} />
           <meshBasicMaterial
             transparent
-            color={0x8fc2ff}
+            color={0x5FE3B8}
             fog={false}
             map={texture}
             opacity={0}
