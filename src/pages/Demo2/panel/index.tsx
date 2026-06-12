@@ -5,7 +5,8 @@ import AutoFit from "@/components/autoFit";
 import { useConfigStore } from "../stores";
 
 import Headder from "./headder";
-import CityDrawer from "./cityDrawer";
+import CityCard from "./cityCard";
+import Timeline from "./timeline";
 import Chart6 from "./chart6";
 import Chart2 from "./chart2";
 import Chart4 from "./chart4";
@@ -31,6 +32,7 @@ const CardWrapper = styled.div`
   display: flex;
   flex-direction: column;
   pointer-events: auto;
+  z-index: 2;
 `;
 
 const CardTitle = styled.div`
@@ -68,6 +70,34 @@ const CardContent = styled.div`
   padding: 20px;
 `;
 
+// 卡片底部蒙版：半透明深色 + 轻微毛玻璃，把 3D 地图的高亮光柱压暗，
+// 让图表文字 / 线条在前景清晰可读。SVG 边框绘制于其上，保持原科技感描边。
+const CardBox = styled.div`
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 6px;
+    background:
+      radial-gradient(
+        130% 100% at 50% 0%,
+        rgba(47, 201, 142, 0.07),
+        transparent 62%
+      ),
+      linear-gradient(
+        158deg,
+        rgba(7, 26, 21, 0.82) 0%,
+        rgba(4, 13, 22, 0.88) 100%
+      );
+    box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    pointer-events: none;
+  }
+`;
+
 const Card = ({
   title,
   children,
@@ -76,13 +106,14 @@ const Card = ({
   React.HTMLAttributes<HTMLDivElement>,
   HTMLDivElement
 > & { title: string }) => (
-  <div {...props}>
+  <CardBox {...props}>
     <svg
       width="100%"
       height="100%"
       fill="none"
       viewBox="0 0 260 180"
-      preserveAspectRatio="none">
+      preserveAspectRatio="none"
+      style={{ position: "relative", zIndex: 1 }}>
       <path
         fill="#2FC98E"
         fillRule="evenodd"
@@ -96,7 +127,7 @@ const Card = ({
       <CardTitle>{title}</CardTitle>
       <CardContent>{children}</CardContent>
     </CardWrapper>
-  </div>
+  </CardBox>
 );
 
 export default function Panel() {
@@ -143,13 +174,13 @@ export default function Panel() {
         <Card
           ref={leftBox1.ref}
           style={{ gridArea: "3 / 1 / 5 / 2" }}
-          title="十年趋势对比">
+          title="九市指数·十年趋势">
           <Chart2 />
         </Card>
         <Card
           ref={leftBox2.ref}
           style={{ gridArea: "5 / 1 / 7 / 2" }}
-          title="多维指标·散点矩阵">
+          title="经济实力 × 宜居指数">
           <Chart3 />
         </Card>
         <Card
@@ -161,7 +192,7 @@ export default function Panel() {
         <Card
           ref={rightBox1.ref}
           style={{ gridArea: "3 / 4 / 5 / 5" }}
-          title="沿海三城对比">
+          title="九市维度·指标下钻">
           <Chart5 />
         </Card>
         <Card
@@ -171,7 +202,8 @@ export default function Panel() {
           <Chart6 />
         </Card>
       </GridWrapper>
-      <CityDrawer />
+      <CityCard />
+      <Timeline />
     </AutoFit>
   );
 }

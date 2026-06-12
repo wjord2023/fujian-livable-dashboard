@@ -1,224 +1,130 @@
 import { useRef } from "react";
-import useRafInterval from "@/hooks/useRafInterval";
 import Chart from "@/components/chart";
 import type { ComposeOption, EChartsType } from "echarts/core";
 import { LineChart, type LineSeriesOption } from "echarts/charts";
 import {
-  DataZoomComponent,
   GridComponent,
-  LegendComponent,
-  MarkPointComponent,
+  MarkLineComponent,
   TooltipComponent,
-  type DataZoomComponentOption,
   type GridComponentOption,
-  type LegendComponentOption,
-  type MarkPointComponentOption,
+  type MarkLineComponentOption,
   type TooltipComponentOption,
 } from "echarts/components";
-import { greenLivableTrend } from "../data";
+import {
+  cityIndexSeries,
+  latestYear,
+  years,
+} from "../data";
+import { useConfigStore } from "../stores";
+import { useCityLink } from "./useCityLink";
 
 type LineOption = ComposeOption<
   | LineSeriesOption
   | TooltipComponentOption
   | GridComponentOption
-  | LegendComponentOption
-  | DataZoomComponentOption
-  | MarkPointComponentOption
+  | MarkLineComponentOption
 >;
 
-const colors = ["#2FC98E", "#93E6C8"];
-const dataType = { type1: "综合指数", type2: "城镇化率" };
-const data: [string[], number[], number[]] = [
-  greenLivableTrend.map((item) => `${item.year}`),
-  greenLivableTrend.map((item) => item.index),
-  greenLivableTrend.map((item) => item.urbanization),
-];
+// 十年趋势：默认铺开九市的「绿色宜居指数」逐年轨迹（全部展示），
+// 悬停 / 点击某条线即聚焦该市并联动其它图表；竖直标线跟随时间轴指示当前年份。
+const yearLabels = years.map((y) => `${y}`);
+
+const yearMarkLine = (year: number): LineSeriesOption["markLine"] => ({
+  silent: true,
+  symbol: "none",
+  label: {
+    show: true,
+    formatter: `${year}`,
+    color: "#E6FBF1",
+    fontSize: 10,
+    position: "start",
+  },
+  lineStyle: {
+    color: "rgba(230, 251, 241, 0.55)",
+    type: "dashed",
+    width: 1,
+  },
+  data: [{ xAxis: `${year}` }],
+});
+
+const buildSeries = (markYear: number): LineSeriesOption[] =>
+  cityIndexSeries.map((s, i) => ({
+    name: s.city,
+    type: "line",
+    smooth: true,
+    symbol: "circle",
+    symbolSize: 4,
+    showSymbol: false,
+    data: s.data,
+    lineStyle: { color: s.color, width: 2, opacity: 0.62 },
+    itemStyle: { color: s.color },
+    emphasis: {
+      focus: "series",
+      lineStyle: { width: 3.4, opacity: 1 },
+    },
+    blur: {
+      lineStyle: { opacity: 0.1 },
+    },
+    ...(i === 0 ? { markLine: yearMarkLine(markYear) } : {}),
+  }));
 
 export default function Chart2() {
   const chartRef = useRef<EChartsType>(null);
-  const xLength = useRef(0);
 
-  useRafInterval(() => {
-    if (chartRef.current) {
-      chartRef.current?.dispatchAction({
-        type: "dataZoom",
-        // 开始位置的数值
-        startValue: xLength.current,
-        // 结束位置的数值
-        endValue: xLength.current + 8,
-      });
-      xLength.current = (xLength.current + 1) % (data[0].length - 8);
-    }
-  }, 2_000);
+  useCityLink(chartRef, {
+    resolveCity: (p) => (p as { seriesName?: string }).seriesName ?? null,
+    applyHighlight: (chart, city) => {
+      chart.dispatchAction({ type: "downplay" });
+      const idx = cityIndexSeries.findIndex((s) => s.city === city);
+      if (city && idx >= 0)
+        chart.dispatchAction({ type: "highlight", seriesIndex: idx });
+    },
+    onYear: (chart, year) => {
+      chart.setOption({ series: [{ markLine: yearMarkLine(year) }] });
+    },
+  });
 
   return (
     <Chart<LineOption>
       ref={chartRef}
-      use={[
-        LineChart,
-        TooltipComponent,
-        GridComponent,
-        LegendComponent,
-        DataZoomComponent,
-        MarkPointComponent,
-      ]}
+      use={[LineChart, TooltipComponent, GridComponent, MarkLineComponent]}
       option={{
         tooltip: {
-          trigger: "axis",
-          axisPointer: {
-            type: "shadow",
-          },
-          textStyle: {
-            color: "rgba(255, 255, 255,0.8)",
-          },
-          backgroundColor: "rgba(0, 0, 0,0.8)",
-          borderColor: colors[1],
+          trigger: "item",
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          borderColor: "#93E6C8",
           borderWidth: 1,
-          borderRadius: 8,
+          textStyle: { color: "rgba(255, 255, 255, 0.85)", fontSize: 12 },
+          formatter: (params) => {
+            const p = Array.isArray(params) ? params[0] : params;
+            return `${p.seriesName}<br/>${
+              yearLabels[p.dataIndex as number]
+            }　指数 ${p.value}`;
+          },
         },
-        grid: {
-          top: 42,
-          bottom: 16,
-          left: 16,
-          right: 16,
-          outerBoundsMode: "same",
-        },
-        legend: {
-          right: 16,
-          top: 0,
-          data: Object.values(dataType).map((item, index) => ({
-            name: item,
-            value: 2000,
-            icon: "none",
-            textStyle: {
-              color: colors[index],
-            },
-          })),
-        },
-        calculable: true,
+        grid: { top: 16, bottom: 22, left: 30, right: 14 },
         xAxis: {
           type: "category",
           boundaryGap: false,
-          axisLine: {
-            lineStyle: {
-              color: "rgba(255, 255, 255, 0.1)",
-            },
-          },
+          data: yearLabels,
+          axisLine: { lineStyle: { color: "rgba(255, 255, 255, 0.12)" } },
+          axisTick: { show: false },
           axisLabel: {
-            interval: 0,
-            hideOverlap: true,
-            margin: 10,
-            color: "rgba(255, 255, 255, 0.6)",
+            color: "rgba(255, 255, 255, 0.55)",
+            fontSize: 10,
+            interval: 1,
           },
-          splitLine: {
-            show: false,
-          },
-          axisTick: {
-            show: false,
-          },
-          data: data[0],
         },
         yAxis: {
           type: "value",
-          axisLabel: {
-            interval: 0,
-            color: "rgba(255, 255, 255, 0.6)",
-          },
-          splitLine: {
-            show: false,
-          },
-          axisLine: {
-            show: true,
-            lineStyle: {
-              color: "rgba(255, 255, 255, 0.1)",
-            },
-          },
+          min: 0,
+          max: 100,
+          splitLine: { lineStyle: { color: "rgba(255, 255, 255, 0.05)" } },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: "rgba(255, 255, 255, 0.5)", fontSize: 10 },
         },
-        dataZoom: {
-          type: "slider",
-          show: false,
-          realtime: true,
-          startValue: 0,
-          endValue: 8,
-        },
-        series: [
-          {
-            name: dataType.type1,
-            type: "line",
-            symbol: "none",
-            smooth: true,
-            itemStyle: {
-              color: colors[0],
-            },
-            areaStyle: {
-              color: {
-                type: "linear",
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: colors[0] },
-                  { offset: 1, color: "rgba(0,0,0,0.1)" },
-                ],
-                global: false,
-              },
-            },
-            markPoint: {
-              symbol: "rect",
-              symbolSize: [50, 20],
-              symbolOffset: [0, -10],
-              label: {
-                color: "#ffffff",
-              },
-              data: [
-                {
-                  type: "max",
-                  name: "最大值",
-                },
-              ],
-            },
-            data: data[1],
-          },
-          {
-            name: dataType.type2,
-            type: "line",
-            symbol: "none",
-            smooth: true,
-            itemStyle: {
-              color: colors[1],
-            },
-            areaStyle: {
-              color: {
-                type: "linear",
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: colors[1] },
-                  { offset: 1, color: "rgba(255,255,255,0.1)" },
-                ],
-                global: false,
-              },
-            },
-            markPoint: {
-              symbol: "rect",
-              symbolSize: [50, 20],
-              symbolOffset: [0, -10],
-              label: {
-                color: "#ffffff",
-              },
-              data: [
-                {
-                  type: "max",
-                  name: "最大值",
-                },
-              ],
-            },
-            data: data[2],
-          },
-        ],
+        series: buildSeries(useConfigStore.getState().year ?? latestYear),
       }}
     />
   );

@@ -1,15 +1,19 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
+import { latestYear } from "../data";
 
 interface ConfigStore {
   mapPlayComplete: boolean;
   /** 鼠标悬停的城市（临时高亮，离开即清空） */
   hoveredCity: string | null;
-  /** 点击锁定的城市（持续高亮 + 打开详情抽屉 + 相机聚焦） */
+  /** 点击锁定的城市（持续高亮 + 打开详情卡片 + 相机聚焦） */
   selectedCity: string | null;
+  /** 时间轴当前年份（驱动地图与各图表随时间变化） */
+  year: number;
   setHoveredCity: (city: string | null) => void;
   /** 再次点击同一城市则取消选择；传入 null 直接关闭 */
   setSelectedCity: (city: string | null) => void;
+  setYear: (year: number) => void;
   toggle: (key: "mapPlayComplete") => void;
   reset: () => void;
 }
@@ -19,9 +23,11 @@ export const useConfigStore = create<ConfigStore>()(
     mapPlayComplete: false,
     hoveredCity: null,
     selectedCity: null,
+    year: latestYear,
     setHoveredCity: (city) => set({ hoveredCity: city }),
     setSelectedCity: (city) =>
       set((s) => ({ selectedCity: s.selectedCity === city ? null : city })),
+    setYear: (year) => set({ year }),
     toggle: (key) => set((s) => ({ [key]: !s[key] })),
     reset: () => set(store.getInitialState()),
   }))

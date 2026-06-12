@@ -7,11 +7,12 @@ import { ParallelComponent, TooltipComponent } from "echarts/components";
 // 因为是 `import type`，构建时会被擦除，不影响按需引入的产物体积。
 import type { EChartsOption } from "echarts";
 import type { EChartsType } from "echarts/core";
-import { cityGreenLivable, cityColorMap } from "../data";
+import { citiesAtYear, cityColorMap, latestYear } from "../data";
+import { useConfigStore } from "../stores";
 import { useCityLink } from "./useCityLink";
 
 // 平行坐标图：每条折线代表一个地市，跨越生态、医疗、教育、生活、城镇化五个维度，
-// 用于对比九市的多维表现、识别优势与短板，并观察沿海/山区等城市类型的整体差异。
+// 默认铺开九市全量、点击某条线即聚焦该市；随时间轴推进，各折线逐年变化。
 const dimensions = [
   { key: "eco", name: "生态" },
   { key: "health", name: "医疗" },
@@ -20,15 +21,19 @@ const dimensions = [
   { key: "urbanization", name: "城镇化" },
 ] as const;
 
-const seriesData = cityGreenLivable.map((city) => ({
-  name: city.city,
-  value: dimensions.map((dim) => city[dim.key]),
-  lineStyle: {
-    color: cityColorMap[city.city],
-    width: 2,
-    opacity: 0.7,
-  },
-}));
+// 城市名 → 平行坐标里的 dataIndex（按排名顺序固定，不随年份变化）。
+const cityOrder = citiesAtYear(latestYear).map((c) => c.city);
+
+const buildSeriesData = (year: number) =>
+  citiesAtYear(year).map((city) => ({
+    name: city.city,
+    value: dimensions.map((dim) => city[dim.key]),
+    lineStyle: {
+      color: cityColorMap[city.city],
+      width: 2,
+      opacity: 0.7,
+    },
+  }));
 
 export default function Chart6() {
   const chartRef = useRef<EChartsType>(null);
@@ -38,16 +43,19 @@ export default function Chart6() {
       const pp = p as { name?: string; dataIndex?: number };
       if (pp.name) return pp.name;
       if (typeof pp.dataIndex === "number")
-        return seriesData[pp.dataIndex]?.name ?? null;
+        return cityOrder[pp.dataIndex] ?? null;
       return null;
     },
     applyHighlight: (chart, city) => {
       chart.dispatchAction({ type: "downplay", seriesIndex: 0 });
       if (city) {
-        const dataIndex = seriesData.findIndex((d) => d.name === city);
+        const dataIndex = cityOrder.indexOf(city);
         if (dataIndex >= 0)
           chart.dispatchAction({ type: "highlight", seriesIndex: 0, dataIndex });
       }
+    },
+    onYear: (chart, year) => {
+      chart.setOption({ series: [{ data: buildSeriesData(year) }] });
     },
   });
 
@@ -102,7 +110,7 @@ export default function Chart6() {
             blur: {
               lineStyle: { opacity: 0.08 },
             },
-            data: seriesData,
+            data: buildSeriesData(useConfigStore.getState().year ?? latestYear),
           },
         ],
       }}

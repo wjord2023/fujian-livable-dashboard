@@ -1,10 +1,19 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import styled from "styled-components";
 import { Center, useTexture } from "@react-three/drei";
 import {
   Box2,
   DoubleSide,
   LineSegments,
   Mesh,
+  MeshStandardMaterial,
   ShaderMaterial,
   Shape,
   ShapeGeometry,
@@ -22,7 +31,45 @@ import ShapeBox from "./shape";
 import FlyLine from "./flyLine";
 import Boundary from "./boundary";
 import Label from "./label";
-import { activeCitySelector, useConfigStore } from "../stores";
+import { useConfigStore } from "../stores";
+import { cityAtYear, indexColorAt, yearIndexDomain } from "../data";
+
+const SELECTED_RISE_MIN = 1.8;
+const SELECTED_RISE_MAX = 3.2;
+const HOVER_RISE_MIN = 1.22;
+const HOVER_RISE_MAX = 1.55;
+
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+
+const scoreRatioAt = (city: string, year: number) => {
+  const score = cityAtYear(city, year)?.index;
+  if (typeof score !== "number") return 0;
+
+  const { min, max } = yearIndexDomain(year);
+  return max > min ? clamp01((score - min) / (max - min)) : 0.5;
+};
+
+const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
+
+// 地图城市标签：城市名 + 当前年份的绿色宜居指数（数值颜色随分数深浅变化）。
+const CityTag = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  background: rgba(6, 20, 16, 0.55);
+  border: 1px solid rgba(95, 227, 184, 0.32);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+
+  b {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+`;
 
 import fjMap from "@/assets/fj_map.png";
 import fjNormalMap from "@/assets/fj_normal_map.png";
@@ -227,8 +274,15 @@ function City(props: {
 }) {
   const { bbox, data, depth } = props;
   const materialRef = useRef<ShaderMaterial>(null!);
+  const capRef = useRef<MeshStandardMaterial>(null!);
   const groupRef = useRef<Group>(null!);
   const vector3 = useRef(new Vector3(1, 1, 1));
+  const [score, setScore] = useState(
+    () => cityAtYear(data.name, useConfigStore.getState().year)?.index ?? 0
+  );
+  const [tagColor, setTagColor] = useState(() =>
+    indexColorAt(score, useConfigStore.getState().year)
+  );
 
   const [texture, normalMap, displacementMap] = useTexture([
     fjMap,
@@ -247,12 +301,46 @@ function City(props: {
     materialRef.current.uniforms.time.value += delta / 3;
   });
 
-  // 跟随全局高亮城市：当前城市被高亮则抬升（z 放大），否则复位。
+  // 抬升高度：点击选中→按当前年份指数高低拉伸；悬停→同样按分数轻微抬起；其余复位。
+  // 选中态使用更大的高度区间，让城市分数和视觉高度形成正相关。
   useEffect(() => {
-    const apply = (active: string | null) =>
-      vector3.current.setZ(active === data.name ? 1.6 : 1);
-    apply(activeCitySelector(useConfigStore.getState()));
-    return useConfigStore.subscribe(activeCitySelector, apply);
+    const targetZ = (s: {
+      selectedCity: string | null;
+      hoveredCity: string | null;
+      year: number;
+    }) => {
+      const scoreRatio = scoreRatioAt(data.name, s.year);
+      if (s.selectedCity === data.name) {
+        return lerp(SELECTED_RISE_MIN, SELECTED_RISE_MAX, scoreRatio);
+      }
+      if (s.hoveredCity === data.name) {
+        return lerp(HOVER_RISE_MIN, HOVER_RISE_MAX, scoreRatio);
+      }
+      return 1;
+    };
+    const apply = (z: number) => vector3.current.setZ(z);
+    apply(targetZ(useConfigStore.getState()));
+    return useConfigStore.subscribe(targetZ, apply);
+  }, [data.name]);
+
+  // 按当前年份的绿色宜居指数给城市着色（同年内分数越高越亮绿、越低越暗），并刷新标签分数。
+  useEffect(() => {
+    const apply = (year: number) => {
+      const d = cityAtYear(data.name, year);
+      if (!d) return;
+      setScore(d.index);
+      const color = indexColorAt(d.index, year);
+      setTagColor(color);
+      capRef.current?.color.set(color);
+      if (materialRef.current) {
+        materialRef.current.uniforms.baseTopColor.value.set(color);
+        materialRef.current.uniforms.scanColor.value.set(
+          indexColorAt(d.index + 10, year)
+        );
+      }
+    };
+    apply(useConfigStore.getState().year);
+    return useConfigStore.subscribe((s) => s.year, apply);
   }, [data.name]);
 
   return (
@@ -274,9 +362,9 @@ function City(props: {
     >
       <ShapeBox bbox={bbox} args={[shape, { depth, bevelEnabled: false }]}>
         <meshStandardMaterial
+          ref={capRef}
           transparent
           attach="material-0"
-          color="#dce8e1"
           map={texture}
           normalMap={normalMap}
           normalScale={new Vector2(0.35, 0.35)}
@@ -305,7 +393,10 @@ function City(props: {
         position={[data.center.x, data.center.y, depth + 0.2]}
         distanceFactor={10}
         zIndexRange={[100 - 1000]}>
-        {data.name}
+        <CityTag>
+          <span>{data.name}</span>
+          <b style={{ color: tagColor }}>{score}</b>
+        </CityTag>
       </Label>
     </object3D>
   );

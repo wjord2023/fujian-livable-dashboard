@@ -1,178 +1,127 @@
-export const greenLivableSummary = {
-  latestYear: 2024,
-  cityCount: 9,
-  avgIndex: 56.97,
-  avgUrbanization: 69.3,
-  avgGdpPerCapita: 129218,
-  avgEco: 84.14,
-  improvement: 24.95,
+import realDataJson from "./realData.json";
+
+// ──────────────────────────────────────────────────────────────────────────
+// 数据来源：fujian_green_livable_2015_2024/ 官方源表（福建九市 2015–2024 真实统计）。
+// realData.json 由源表抽取生成，含 5 个维度得分 + 城镇化率 / 人均GDP / 人口 / 密度。
+//
+// 维度口径：
+//   - 生态环境(eco) / 生活便利(life) / 空间承载(space)：直接采用源表标准化得分；
+//   - 医疗养老(health) / 教育文化(education)：源表原始得分只用「每万人/每百人」人均口径，
+//     会让人口稀疏的内陆市虚高（如三明 > 厦门），不符合常理。这里改为
+//     「人均得分 × 0.5 + 绝对总量得分 × 0.5」的混合口径，兼顾资源规模与人均可得性。
+//   - 综合指数(index)：按官方权重 生态30% 医疗20% 教育20% 生活20% 空间承载10%
+//     对 5 个维度得分加权重算（负向指标在源表中已反向标准化）。
+// ──────────────────────────────────────────────────────────────────────────
+
+export type CityMetricKey =
+  | "index"
+  | "eco"
+  | "health"
+  | "education"
+  | "life"
+  | "space"
+  | "urbanization"
+  | "gdpPerCapita"
+  | "population"
+  | "density";
+
+export interface CityYear extends Record<CityMetricKey, number> {
+  city: string;
+  year: number;
+}
+
+const realData = realDataJson as CityYear[];
+
+const round = (x: number, d = 2) => Number(x.toFixed(d));
+
+// ── 年份轴 ──
+export const years = [...new Set(realData.map((d) => d.year))].sort(
+  (a, b) => a - b
+);
+export const firstYear = years[0];
+export const latestYear = years[years.length - 1];
+
+// ── 分城市逐年真实序列 ──
+export const cityTrendData: Record<string, CityYear[]> = {};
+realData.forEach((d) => {
+  (cityTrendData[d.city] ??= []).push(d);
+});
+Object.values(cityTrendData).forEach((arr) =>
+  arr.sort((a, b) => a.year - b.year)
+);
+
+// 2024 快照，按真实综合指数降序排列（决定排名 / 配色顺序）。
+export const cityGreenLivable: CityYear[] = realData
+  .filter((d) => d.year === latestYear)
+  .slice()
+  .sort((a, b) => b.index - a.index);
+
+/** 指定年份全部九市的数据（保持 cityGreenLivable 的排名顺序）。 */
+export const citiesAtYear = (year: number): CityYear[] =>
+  cityGreenLivable.map(
+    (c) =>
+      cityTrendData[c.city].find((d) => d.year === year) ??
+      cityTrendData[c.city][cityTrendData[c.city].length - 1]
+  );
+
+/** 指定城市在指定年份的数据。 */
+export const cityAtYear = (city: string, year: number): CityYear | null =>
+  cityTrendData[city]?.find((d) => d.year === year) ?? null;
+
+/** 指定年份的全省各维度均值（用于 KPI、雷达基准线、详情卡对比刻度）。 */
+export const provinceAvgAtYear = (year: number) => {
+  const arr = citiesAtYear(year);
+  const mean = (key: CityMetricKey) =>
+    arr.reduce((s, c) => s + c[key], 0) / arr.length;
+  return {
+    index: round(mean("index")),
+    eco: round(mean("eco")),
+    health: round(mean("health")),
+    education: round(mean("education")),
+    life: round(mean("life")),
+    space: round(mean("space")),
+    urbanization: round(mean("urbanization")),
+    gdpPerCapita: Math.round(mean("gdpPerCapita")),
+    population: Math.round(mean("population")),
+    density: round(mean("density"), 1),
+  };
 };
 
-export const greenLivableTrend = [
-  { year: 2015, index: 32.02, urbanization: 60.51, eco: 63.12, life: 16.36 },
-  { year: 2016, index: 34.63, urbanization: 61.49, eco: 66.49, life: 20.05 },
-  { year: 2017, index: 38.11, urbanization: 62.76, eco: 70.52, life: 24.48 },
-  { year: 2018, index: 41.3, urbanization: 63.73, eco: 73.52, life: 29 },
-  { year: 2019, index: 45.62, urbanization: 64.42, eco: 77.78, life: 36.17 },
-  { year: 2020, index: 47.35, urbanization: 66.54, eco: 78.34, life: 39.74 },
-  { year: 2021, index: 50.14, urbanization: 67.64, eco: 81.44, life: 46.36 },
-  { year: 2022, index: 52.96, urbanization: 68.16, eco: 83.23, life: 51.56 },
-  { year: 2023, index: 55.29, urbanization: 69.12, eco: 83.3, life: 55.07 },
-  { year: 2024, index: 56.97, urbanization: 69.3, eco: 84.14, life: 58.85 },
-];
+// ── 全省十年趋势（由真实逐年数据按年求均值）──
+export const greenLivableTrend = years.map((year) => {
+  const a = provinceAvgAtYear(year);
+  return {
+    year,
+    index: a.index,
+    urbanization: a.urbanization,
+    eco: a.eco,
+    life: a.life,
+  };
+});
 
-export const cityGreenLivable = [
-  {
-    city: "宁德市",
-    index: 68.13,
-    eco: 87.92,
-    health: 53.48,
-    education: 70.48,
-    life: 60.64,
-    urbanization: 64.02,
-    gdpPerCapita: 131054,
-    population: 316,
-    density: 235.4,
-  },
-  {
-    city: "泉州市",
-    index: 63.26,
-    eco: 90.15,
-    health: 39.03,
-    education: 32.8,
-    life: 91.06,
-    urbanization: 71.03,
-    gdpPerCapita: 146796,
-    population: 891,
-    density: 549.5,
-  },
-  {
-    city: "三明市",
-    index: 58.39,
-    eco: 59.72,
-    health: 70.68,
-    education: 55.73,
-    life: 47.43,
-    urbanization: 65.93,
-    gdpPerCapita: 127418,
-    population: 242,
-    density: 100.6,
-  },
-  {
-    city: "福州市",
-    index: 57.91,
-    eco: 95.43,
-    health: 43.57,
-    education: 29.47,
-    life: 63.19,
-    urbanization: 74.21,
-    gdpPerCapita: 165793,
-    population: 852,
-    density: 486,
-  },
-  {
-    city: "莆田市",
-    index: 55.96,
-    eco: 87.36,
-    health: 63.27,
-    education: 19.82,
-    life: 53.37,
-    urbanization: 65.27,
-    gdpPerCapita: 103241,
-    population: 318,
-    density: 345.5,
-  },
-  {
-    city: "南平市",
-    index: 54.54,
-    eco: 97.89,
-    health: 52.21,
-    education: 29.37,
-    life: 38.71,
-    urbanization: 62.42,
-    gdpPerCapita: 83647,
-    population: 262,
-    density: 99.1,
-  },
-  {
-    city: "漳州市",
-    index: 54.31,
-    eco: 58.99,
-    health: 60.21,
-    education: 30.34,
-    life: 67.67,
-    urbanization: 64.12,
-    gdpPerCapita: 119092,
-    population: 505,
-    density: 333.5,
-  },
-  {
-    city: "厦门市",
-    index: 50.6,
-    eco: 95.65,
-    health: 34.77,
-    education: 8.07,
-    life: 63.91,
-    urbanization: 90.95,
-    gdpPerCapita: 163651,
-    population: 536,
-    density: 512.2,
-  },
-  {
-    city: "龙岩市",
-    index: 49.64,
-    eco: 84.11,
-    health: 44.57,
-    education: 26.18,
-    life: 43.71,
-    urbanization: 65.73,
-    gdpPerCapita: 122274,
-    population: 271,
-    density: 141.8,
-  },
-];
+const provAvgLatest = provinceAvgAtYear(latestYear);
+const provAvgFirst = provinceAvgAtYear(firstYear);
 
+export const greenLivableSummary = {
+  latestYear,
+  cityCount: cityGreenLivable.length,
+  avgIndex: provAvgLatest.index,
+  avgUrbanization: provAvgLatest.urbanization,
+  avgGdpPerCapita: provAvgLatest.gdpPerCapita,
+  avgEco: provAvgLatest.eco,
+  improvement: round(provAvgLatest.index - provAvgFirst.index),
+};
+
+// 四个核心宜居维度的全省 2024 均值。
 export const dimensionAverages = [
-  {
-    name: "生态环境",
-    value: Number(
-      (
-        cityGreenLivable.reduce((sum, item) => sum + item.eco, 0) /
-        cityGreenLivable.length
-      ).toFixed(2)
-    ),
-  },
-  {
-    name: "医疗养老",
-    value: Number(
-      (
-        cityGreenLivable.reduce((sum, item) => sum + item.health, 0) /
-        cityGreenLivable.length
-      ).toFixed(2)
-    ),
-  },
-  {
-    name: "教育休闲",
-    value: Number(
-      (
-        cityGreenLivable.reduce((sum, item) => sum + item.education, 0) /
-        cityGreenLivable.length
-      ).toFixed(2)
-    ),
-  },
-  {
-    name: "生活富足",
-    value: Number(
-      (
-        cityGreenLivable.reduce((sum, item) => sum + item.life, 0) /
-        cityGreenLivable.length
-      ).toFixed(2)
-    ),
-  },
+  { name: "生态环境", value: provAvgLatest.eco },
+  { name: "医疗养老", value: provAvgLatest.health },
+  { name: "教育休闲", value: provAvgLatest.education },
+  { name: "生活富足", value: provAvgLatest.life },
 ];
 
 // 按综合指数排名（由高到低）生成的城市配色：亮绿 → 深青（呼应「绿色宜居」主题）。
-// 风玫瑰图、散点图矩阵、平行坐标图共用同一套配色，保证同一城市在不同图表中颜色一致，
+// 风玫瑰图、气泡图、平行坐标图共用同一套配色，保证同一城市在不同图表中颜色一致，
 // 同时颜色本身也编码了排名（越亮绿综合指数越高，越宜居）。
 const rankPalette = [
   "#A6F5C9",
@@ -196,37 +145,8 @@ export const cityColorMap: Record<string, string> = cityGreenLivable.reduce(
 
 export const topGreenLivableCities = cityGreenLivable.slice(0, 5);
 
-const numericMean = (
-  key:
-    | "index"
-    | "eco"
-    | "health"
-    | "education"
-    | "life"
-    | "urbanization"
-    | "density"
-    | "gdpPerCapita"
-    | "population"
-) =>
-  Number(
-    (
-      cityGreenLivable.reduce((sum, c) => sum + c[key], 0) /
-      cityGreenLivable.length
-    ).toFixed(2)
-  );
-
-// 全省九市各指标均值，用于详情抽屉里的「优势 / 短板」对比。
-export const provinceAvg = {
-  index: numericMean("index"),
-  eco: numericMean("eco"),
-  health: numericMean("health"),
-  education: numericMean("education"),
-  life: numericMean("life"),
-  urbanization: numericMean("urbanization"),
-  density: numericMean("density"),
-  gdpPerCapita: numericMean("gdpPerCapita"),
-  population: numericMean("population"),
-};
+// 全省九市各指标 2024 均值，用于详情抽屉里的「优势 / 短板」对比。
+export const provinceAvg = provAvgLatest;
 
 // 城市 → 综合指数排名（cityGreenLivable 已按综合指数降序排列）。
 export const cityRankMap: Record<string, number> = cityGreenLivable.reduce(
@@ -254,3 +174,76 @@ export const coastalCities = ["福州市", "泉州市", "厦门市"].map((city) 
 
   return item;
 });
+
+/** 趋势折线图用：每个城市的「绿色宜居指数」十年序列。 */
+export const cityIndexSeries = cityGreenLivable.map((c) => ({
+  city: c.city,
+  color: cityColorMap[c.city],
+  data: cityTrendData[c.city].map((d) => d.index),
+}));
+
+// ── 地图按「分数深浅」着色：指数越高越亮绿，越低越暗沉。 ──
+const hexToRgb = (hex: string) => {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ] as const;
+};
+const rgbToHex = (r: number, g: number, b: number) => {
+  const c = (x: number) =>
+    Math.round(Math.max(0, Math.min(255, x)))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${c(r)}${c(g)}${c(b)}`;
+};
+const mixHex = (a: string, b: string, t: number) => {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bb] = hexToRgb(b);
+  return rgbToHex(ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t);
+};
+
+const allIndexValues = realData.map((d) => d.index);
+export const indexDomain = {
+  min: Math.min(...allIndexValues),
+  max: Math.max(...allIndexValues),
+};
+
+const SCORE_LOW = "#0d4332"; // 低分：暗沉深绿
+const SCORE_MID = "#2FC98E";
+const SCORE_HIGH = "#BFFFDD"; // 高分：明亮翠绿
+
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+
+// 0–1 归一化分数 → 绿色深浅（低→暗，高→亮）。
+const scoreToColor = (t: number) =>
+  t < 0.5
+    ? mixHex(SCORE_LOW, SCORE_MID, t / 0.5)
+    : mixHex(SCORE_MID, SCORE_HIGH, (t - 0.5) / 0.5);
+
+/** 把绿色宜居指数映射成绿色深浅（按「全部年份」全局区间）。 */
+export const indexColor = (v: number) => {
+  const { min, max } = indexDomain;
+  const t = max > min ? clamp01((v - min) / (max - min)) : 0.5;
+  return scoreToColor(t);
+};
+
+/** 指定年份九市「绿色宜居指数」的取值区间。 */
+export const yearIndexDomain = (year: number) => {
+  const arr = citiesAtYear(year).map((c) => c.index);
+  return { min: Math.min(...arr), max: Math.max(...arr) };
+};
+
+/**
+ * 按「当年九市分布」给城市着色：当年最高分→最亮翠绿，最低分→最暗深绿。
+ * 相比全局 indexColor，同一年里各市的深浅对比被显著拉开，便于在地图上一眼看出高低。
+ */
+export const indexColorAt = (v: number, year: number) => {
+  const { min, max } = yearIndexDomain(year);
+  const span = max - min || 1;
+  // 区间两端各留一点余量，避免最低分被压成纯黑、最高分顶到极亮。
+  const lo = min - span * 0.12;
+  const hi = max + span * 0.04;
+  return scoreToColor(clamp01((v - lo) / (hi - lo)));
+};

@@ -6,24 +6,26 @@ import {
   type TooltipComponentOption,
 } from "echarts/components";
 import type { ComposeOption, EChartsType } from "echarts/core";
-import { cityGreenLivable, cityColorMap } from "../data";
+import { citiesAtYear, cityColorMap, latestYear } from "../data";
+import { useConfigStore } from "../stores";
 import { useCityLink } from "./useCityLink";
 
 type RoseOption = ComposeOption<PieSeriesOption | TooltipComponentOption>;
 
 // 风玫瑰图（南丁格尔玫瑰）：每一片花瓣代表一个地市，半径映射其绿色宜居综合指数，
-// 直观呈现福建九市宜居水平的整体差异与排名。
-const roseData = cityGreenLivable.map((item) => ({
-  value: item.index,
-  name: item.city,
-  itemStyle: {
-    color: cityColorMap[item.city],
-    borderColor: "rgba(8, 18, 48, 0.55)",
-    borderWidth: 1,
-    shadowBlur: 8,
-    shadowColor: cityColorMap[item.city],
-  },
-}));
+// 直观呈现福建九市宜居水平的整体差异与排名；随时间轴推进，各花瓣会逐年生长。
+const buildRose = (year: number) =>
+  citiesAtYear(year).map((item) => ({
+    value: item.index,
+    name: item.city,
+    itemStyle: {
+      color: cityColorMap[item.city],
+      borderColor: "rgba(8, 18, 48, 0.55)",
+      borderWidth: 1,
+      shadowBlur: 8,
+      shadowColor: cityColorMap[item.city],
+    },
+  }));
 
 export default function Chart1() {
   const chartRef = useRef<EChartsType>(null);
@@ -32,7 +34,11 @@ export default function Chart1() {
     resolveCity: (p) => (p as { name?: string }).name ?? null,
     applyHighlight: (chart, city) => {
       chart.dispatchAction({ type: "downplay", seriesIndex: 0 });
-      if (city) chart.dispatchAction({ type: "highlight", seriesIndex: 0, name: city });
+      if (city)
+        chart.dispatchAction({ type: "highlight", seriesIndex: 0, name: city });
+    },
+    onYear: (chart, year) => {
+      chart.setOption({ series: [{ data: buildRose(year) }] });
     },
   });
 
@@ -83,7 +89,7 @@ export default function Chart1() {
               itemStyle: { opacity: 0.2 },
               label: { opacity: 0.35 },
             },
-            data: roseData,
+            data: buildRose(useConfigStore.getState().year ?? latestYear),
           },
         ],
       }}

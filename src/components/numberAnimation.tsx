@@ -11,41 +11,33 @@ export interface NumberAnimationProps {
 }
 
 export default function NumberAnimation(props: NumberAnimationProps) {
-  const { value, duration = 2, delay, options, className, style } = props;
-  const fromVal = useRef<number>(0);
+  const { value, duration = 0.8, delay = 0, options, className, style } = props;
+  const fromVal = useRef({ current: 0 });
+  const tweenRef = useRef<gsap.core.Tween | null>(null);
   const elRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => {
-    let tween: gsap.core.Tween;
+    const formatValue = (nextValue: number) =>
+      nextValue.toLocaleString("zh-CN", options);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // 只在第一次进入视口时触发
-        if (entry.isIntersecting) {
-          tween = gsap.to(fromVal, {
-            current: value,
-            duration,
-            delay,
-            ease: "power1.out",
-            onUpdate() {
-              elRef.current.innerHTML = fromVal.current.toLocaleString(
-                "zh-CN",
-                options
-              );
-            },
-          });
-        }
+    tweenRef.current?.kill();
+    tweenRef.current = gsap.to(fromVal.current, {
+      current: value,
+      duration,
+      delay,
+      overwrite: "auto",
+      ease: "power1.out",
+      onUpdate() {
+        elRef.current.textContent = formatValue(fromVal.current.current);
       },
-      {
-        threshold: 0.1,
-      }
-    );
-
-    observer.observe(elRef.current);
+      onComplete() {
+        fromVal.current.current = value;
+        elRef.current.textContent = formatValue(value);
+      },
+    });
 
     return () => {
-      tween?.kill();
-      observer.disconnect();
+      tweenRef.current?.kill();
     };
   }, [value, duration, delay, options]);
 
