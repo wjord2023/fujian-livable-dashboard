@@ -66,22 +66,26 @@ export default function Chart6() {
       option={{
         tooltip: {
           trigger: "item",
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          borderColor: "#93E6C8",
+          confine: true,
+          appendToBody: false,
+          backgroundColor: "rgba(4, 13, 22, 0.92)",
+          borderColor: "rgba(95, 227, 184, 0.62)",
           borderWidth: 1,
-          textStyle: { color: "rgba(255, 255, 255, 0.85)", fontSize: 12 },
+          extraCssText:
+            "max-width:120px;box-sizing:border-box;border-radius:4px;box-shadow:0 0 14px rgba(0,0,0,.45);line-height:1.45;white-space:normal;",
+          textStyle: { color: "rgba(230, 251, 241, 0.86)", fontSize: 11 },
           formatter: (params) => {
             const p = Array.isArray(params) ? params[0] : params;
             const v = p.value as number[];
             const rows = dimensions
               .map((dim, i) => `${dim.name}：${v[i]}`)
               .join("<br/>");
-            return `${p.name}<br/>${rows}`;
+            return `<b style="color:#E6FBF1">${p.name}</b><br/>${rows}`;
           },
         },
         parallel: {
           left: "6%",
-          right: "13%",
+          right: "9%",
           top: "16%",
           bottom: "12%",
           parallelAxisDefault: {

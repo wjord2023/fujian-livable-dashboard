@@ -68,12 +68,18 @@ const CardTitle = styled.div`
 const CardContent = styled.div`
   flex: 1;
   padding: 20px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 `;
 
 // 卡片底部蒙版：半透明深色 + 轻微毛玻璃，把 3D 地图的高亮光柱压暗，
 // 让图表文字 / 线条在前景清晰可读。SVG 边框绘制于其上，保持原科技感描边。
 const CardBox = styled.div`
   position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 
   &::before {
     content: "";

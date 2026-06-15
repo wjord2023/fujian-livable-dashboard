@@ -56,18 +56,17 @@ const CityTag = styled.div`
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 1px 8px;
-  border-radius: 9px;
+  padding: 0;
   font-size: 12px;
   line-height: 18px;
   white-space: nowrap;
-  background: rgba(6, 20, 16, 0.55);
-  border: 1px solid rgba(95, 227, 184, 0.32);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  color: rgba(230, 251, 241, 0.82);
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.85), 0 0 10px rgba(95, 227, 184, 0.35);
 
   b {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 9px currentColor;
   }
 `;
 
