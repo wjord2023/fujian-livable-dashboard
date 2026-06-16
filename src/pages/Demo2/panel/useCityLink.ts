@@ -7,6 +7,14 @@ interface CityLinkOptions {
   resolveCity: (params: unknown) => string | null;
   /** 根据当前高亮城市对图表做 highlight / downplay */
   applyHighlight: (chart: EChartsType, city: string | null) => void;
+  /** 自定义点击处理；返回 true 表示已处理，不再执行默认城市选择。 */
+  handleClick?: (params: unknown, chart: EChartsType) => boolean;
+  /** 点击图元后的补充处理，例如记录点击点位置。 */
+  onClickCity?: (
+    params: unknown,
+    selectedCity: string | null,
+    chart: EChartsType
+  ) => void;
   /**
    * 时间轴年份变化时更新图表数据（命令式 setOption）。可选。
    * 注意：年份变更会替换 series 数据并清掉强调态，因此 onYear 之后会自动重放当前高亮。
@@ -48,7 +56,7 @@ function whenChartReady(
  */
 export function useCityLink(
   chartRef: RefObject<EChartsType | null>,
-  { resolveCity, applyHighlight, onYear }: CityLinkOptions
+  { resolveCity, applyHighlight, handleClick, onClickCity, onYear }: CityLinkOptions
 ) {
   useEffect(() => {
     let chart: EChartsType | null = null;
@@ -60,15 +68,28 @@ export function useCityLink(
     };
     const onOut = () => setHoveredCity(null);
     const onClick = (p: unknown) => {
+      const c = chartRef.current ?? chart;
+      if (c && handleClick?.(p, c)) return;
       const city = resolveCity(p);
-      if (city) setSelectedCity(city);
+      if (!city) return;
+      const wasSelected = useConfigStore.getState().selectedCity === city;
+      setSelectedCity(city);
+      if (c) onClickCity?.(p, wasSelected ? null : city, c);
+    };
+    const onCanvasClick = (p: unknown) => {
+      const c = chartRef.current ?? chart;
+      if (c) handleClick?.(p, c);
     };
 
     const cancelReady = whenChartReady(chartRef, (c) => {
       chart = c;
       c.on("mouseover", onOver);
       c.on("mouseout", onOut);
-      c.on("click", onClick);
+      if (handleClick) {
+        c.getZr().on("click", onCanvasClick);
+      } else {
+        c.on("click", onClick);
+      }
       applyHighlight(c, activeCitySelector(useConfigStore.getState()));
     });
 
@@ -91,7 +112,11 @@ export function useCityLink(
       if (chart) {
         chart.off("mouseover", onOver);
         chart.off("mouseout", onOut);
-        chart.off("click", onClick);
+        if (handleClick) {
+          chart.getZr().off("click", onCanvasClick);
+        } else {
+          chart.off("click", onClick);
+        }
       }
       unsubCity();
       unsubYear();

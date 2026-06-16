@@ -82,17 +82,22 @@ const Wrap = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   font-variant-numeric: tabular-nums;
 `;
 
 const Tabs = styled.div`
   display: flex;
-  gap: 5px;
+  gap: 4px;
+  min-width: 0;
 `;
 
 const Tab = styled.button<{ $on: boolean }>`
   flex: 1;
-  font-size: 11px;
+  min-width: 0;
+  font-size: 10px;
   padding: 4px 0;
   border-radius: 5px;
   cursor: pointer;
@@ -108,14 +113,21 @@ const Chips = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 4px 5px;
-  margin: 8px 0 6px;
+  margin: 7px 0 5px;
+  flex: 0 0 auto;
+  max-height: 45px;
+  overflow: hidden;
 `;
 
 const Chip = styled.button<{ $on: boolean }>`
   font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 9px;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: ${(p) => (p.$on ? "#aefadd" : "rgba(230,251,241,0.55)")};
   background: ${(p) => (p.$on ? "rgba(95,227,184,0.16)" : "transparent")};
   border: 1px solid
@@ -135,6 +147,10 @@ const Meta = styled.div`
   b {
     color: #e6fbf1;
     font-size: 12px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   i {
     margin-left: auto;
@@ -146,24 +162,26 @@ const Meta = styled.div`
 
 const Body = styled.div`
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+  gap: 1px;
   padding-top: 4px;
   min-height: 0;
+  overflow: hidden;
 `;
 
 const Row = styled.div<{ $on: boolean; $accent: string }>`
-  flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 32px 1fr 62px;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(42px, 56px);
   align-items: center;
-  gap: 7px;
+  gap: 5px;
   cursor: pointer;
   padding: 0 2px;
   border-radius: 4px;
   background: ${(p) => (p.$on ? `${p.$accent}24` : "transparent")};
   transition: background 0.2s;
+  overflow: hidden;
 
   &:hover {
     background: ${(p) => `${p.$accent}18`};
@@ -174,6 +192,8 @@ const CityName = styled.span`
   font-size: 11px;
   color: #e6fbf1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const Track = styled.div`
@@ -181,6 +201,7 @@ const Track = styled.div`
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
+  min-width: 0;
 `;
 
 const Fill = styled.div<{ $w: number; $accent: string }>`
@@ -201,6 +222,9 @@ const Val = styled.span`
   font-weight: 600;
   color: #fff;
   text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 export default function Chart5() {
